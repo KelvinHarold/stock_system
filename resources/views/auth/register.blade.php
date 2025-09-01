@@ -3,13 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Login - KiligadgetStore</title>
-
-  <!-- Bootstrap 5 CSS -->
+  <title>Register - KiligadgetStore</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
   <style>
     body {
         height: 100vh;
@@ -31,36 +27,16 @@
         margin-bottom: 1.5rem;
         text-align: center;
     }
-
-
-    .logo-img {
-    width: 50px;          /* adjust size */
-    height: 50px;
-    object-fit: cover;    /* crop nicely */
-    border-radius: 50%;   /* makes it round */
-    border: 2px solid #28a745; /* optional border color */
-}
-
-.store-name {
-    font-size: 30px;
-    color: #28a745;       /* nice green color */
-    font-weight: bold;
-    letter-spacing: 1px;
-}
-
   </style>
 </head>
 <body>
 
 <div class="login-card">
-    
     <h2 class="d-flex align-items-center justify-content-center gap-2">
-   <img src="{{ asset('images/Logo.jpg') }}" alt="Logo" class="logo-img">
-    <strong class="store-name ms-2">Lekei Agrovets</strong>
-</h2>
+        <img src="{{ asset('images/Logo.jpg') }}" alt="Logo" class="rounded" width="90" height="90">
+        <div>KiligadgetStore</div>
+    </h2>
 
-
-    <!-- Display errors -->
     @if($errors->any())
         <div class="alert alert-danger">
             <ul class="mb-0">
@@ -71,43 +47,33 @@
         </div>
     @endif
 
-    <!-- Login Form -->
-    <form method="POST" action="{{ route('login') }}">
+    <form method="POST" action="{{ route('register.store') }}">
         @csrf
-
+        <div class="mb-3">
+            <label for="name" class="form-label">Full Name</label>
+            <input type="text" name="name" id="name" class="form-control" value="{{ old('name') }}" required autofocus>
+        </div>
         <div class="mb-3">
             <label for="email" class="form-label">Email</label>
-            <input type="email" name="email" id="email" class="form-control" value="{{ old('email') }}" required autofocus>
+            <input type="email" name="email" id="email" class="form-control" value="{{ old('email') }}" required>
         </div>
-
         <div class="mb-3">
             <label for="password" class="form-label">Password</label>
             <input type="password" name="password" id="password" class="form-control" required>
         </div>
-
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" name="remember" id="remember">
-                <label class="form-check-label" for="remember">Remember me</label>
-            </div>
-            <a href="#" class="text-decoration-none">Forgot Password?</a>
+        <div class="mb-3">
+            <label for="password_confirmation" class="form-label">Confirm Password</label>
+            <input type="password" name="password_confirmation" id="password_confirmation" class="form-control" required>
         </div>
-<button type="submit" class="btn btn-primary w-100">
-    <i class="fas fa-sign-in-alt"></i> Login
-</button>
-
-<div class="mt-3 text-center">
-    Don't have an account? <a href="{{ route('register') }}">Register here</a>
-</div>
-
+        <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-user-plus"></i> Register
+        </button>
+        <div class="mt-3 text-center">
+            Already have an account? <a href="{{ route('login') }}">Login</a>
+        </div>
     </form>
-    
 </div>
 
-
-
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
 </html>

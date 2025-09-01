@@ -44,9 +44,6 @@
     <h3 class="h5">
         <i class="fas fa-exchange-alt text-primary"></i> Transactions
     </h3>
-    <a href="{{ route('transactions.create') }}" class="btn btn-sm btn-primary">
-        <i class="fas fa-plus-circle"></i> Add Transaction
-    </a>
 </div>
 
 <div class="table-responsive shadow-sm">

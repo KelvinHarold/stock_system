@@ -1,14 +1,37 @@
 @extends('layouts.app')
 @section('content')
- @include('components.success-message')
- 
+@include('components.success-message')
+
+{{-- Summary Cards --}}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card text-white bg-success shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title"><i class="fas fa-arrow-down"></i> Stock In</h5>
+                    <h3 class="card-text">{{ $transactions->where('type', 'in')->count() }}</h3>
+                </div>
+                <i class="fas fa-box fa-2x"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card text-white bg-danger shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title"><i class="fas fa-arrow-up"></i> Stock Out</h5>
+                    <h3 class="card-text">{{ $transactions->where('type', 'out')->count() }}</h3>
+                </div>
+                <i class="fas fa-box fa-2x"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3">
         <i class="fas fa-exchange-alt text-primary"></i> Transactions
     </h1>
-    <a href="{{ route('transactions.create') }}" class="btn btn-primary">
-        <i class="fas fa-plus-circle text-white"></i> New Transaction
-    </a>
 </div>
 
 <div class="table-responsive shadow-sm">
@@ -54,7 +77,7 @@
     </table>
 </div>
 
-<!-- Pagination -->
+{{-- Pagination --}}
 <div class="mt-3">
     {{ $transactions->links() }}
 </div>

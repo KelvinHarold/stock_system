@@ -6,11 +6,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
     // Update profile photo
-    public function update(Request $request)
+   
+public function update(Request $request)
 {
     $user = auth()->user();
 
@@ -18,7 +20,7 @@ class ProfileController extends Controller
         'name' => 'required|string|max:255',
         'email' => 'required|email|unique:users,email,' . $user->id,
         'password' => 'nullable|string|min:6|confirmed',
-        'profile_photo' => 'nullable|image|max:2048', // optional, max 2MB
+        'profile_photo' => 'nullable|image|max:2048',
     ]);
 
     $user->name = $request->name;
@@ -29,7 +31,16 @@ class ProfileController extends Controller
     }
 
     if ($request->hasFile('profile_photo')) {
-        $path = $request->file('profile_photo')->store('profile_photos', 'public');
+        // Delete old photo if it exists
+        if ($user->profile_photo_url && Storage::disk('public')->exists($user->profile_photo_url)) {
+            Storage::disk('public')->delete($user->profile_photo_url);
+        }
+
+        // Store new photo with original extension
+        $file = $request->file('profile_photo');
+        $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+        $path = $file->storeAs('profile_photos', $filename, 'public');
+
         $user->profile_photo_url = $path;
     }
 
@@ -37,6 +48,7 @@ class ProfileController extends Controller
 
     return back()->with('success', 'Profile updated successfully.');
 }
+
 
 
     // Update password

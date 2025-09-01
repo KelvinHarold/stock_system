@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('content')
- @include('components.success-message')
+@include('components.success-message')
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3">
         <i class="fas fa-plus-circle text-primary"></i> Create Product
@@ -12,7 +13,7 @@
 
 <div class="card shadow-sm">
     <div class="card-body">
-        <form method="post" action="{{ route('products.store') }}">
+        <form method="post" action="{{ route('products.store') }}" enctype="multipart/form-data">
             @csrf
 
             <!-- Name -->
@@ -55,6 +56,14 @@
                     <i class="fas fa-align-left text-primary"></i> Description
                 </label>
                 <textarea name="description" class="form-control" rows="3">{{ old('description') }}</textarea>
+            </div>
+
+            <!-- Product Image -->
+            <div class="mb-3">
+                <label class="form-label">
+                    <i class="fas fa-image text-primary"></i> Product Image (optional)
+                </label>
+                <input type="file" name="image" class="form-control" accept="image/*">
             </div>
 
             <!-- Submit Button -->

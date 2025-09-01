@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('content')
 
- @include('components.success-message')
+@include('components.success-message')
 <!-- Header & New Product Button -->
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3">
@@ -25,6 +25,7 @@
     <table class="table table-hover align-middle">
         <thead class="table-dark">
             <tr>
+                <th><i class="fas fa-image text-primary"></i> Image</th>
                 <th><i class="fas fa-tag text-primary"></i> Name</th>
                 <th><i class="fas fa-cubes text-primary"></i> Qty</th>
                 <th><i class="fas fa-dollar-sign text-primary"></i> Cost</th>
@@ -35,12 +36,30 @@
         <tbody>
             @forelse($products as $p)
             <tr>
+                <!-- Product Image -->
                 <td>
-    <a href="{{ route('products.show', $p) }}" class="fw-bold">
-        <i class="fas fa-box text-primary"></i> 
-        {!! $search ? preg_replace("/($search)/i", '<mark>$1</mark>', $p->name) : $p->name !!}
-    </a>
-</td>
+                    @if($p->image)
+                        <img src="{{ asset('storage/' . $p->image) }}" 
+                             alt="{{ $p->name }}" 
+                             class="img-thumbnail" 
+                             style="width:60px; height:60px; object-fit:cover;">
+                    @else
+                        <img src="{{ asset('images/default.png') }}" 
+                             alt="Default" 
+                             class="img-thumbnail" 
+                             style="width:60px; height:60px; object-fit:cover;">
+                    @endif
+                </td>
+
+                <!-- Product Name -->
+                <td>
+                    <a href="{{ route('products.show', $p) }}" class="fw-bold">
+                        <i class="fas fa-box text-primary"></i> 
+                        {!! $search ? preg_replace("/($search)/i", '<mark>$1</mark>', $p->name) : $p->name !!}
+                    </a>
+                </td>
+
+                <!-- Quantity -->
                 <td>
                     @if($p->quantity <= 0)
                         <span class="badge bg-danger">{{ $p->quantity }}</span>
@@ -50,8 +69,12 @@
                         <span class="badge bg-success">{{ $p->quantity }}</span>
                     @endif
                 </td>
+
+                <!-- Cost & Price -->
                 <td>{{ number_format($p->cost_price,2) }}</td>
                 <td>{{ number_format($p->selling_price,2) }}</td>
+
+                <!-- Actions -->
                 <td>
                     <a href="{{ route('products.edit', $p) }}" class="btn btn-sm btn-outline-secondary">
                         <i class="fas fa-edit text-primary"></i> Edit
