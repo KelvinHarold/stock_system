@@ -20,16 +20,22 @@ class DashboardController extends Controller
             ? Carbon::parse($request->query('end'))->endOfDay() 
             : Carbon::now()->endOfDay();
 
-        // Revenue and COGS for sales in selected range
+        // Revenue, COGS and Discounts in selected range
         $stats = StockTransaction::where('type', StockTransaction::TYPE_OUT)
             ->whereBetween('created_at', [$start, $end])
-            ->selectRaw('COALESCE(SUM(unit_price * quantity),0) as revenue, COALESCE(SUM(unit_cost * quantity),0) as cost')
+            ->selectRaw('
+                COALESCE(SUM(unit_price * quantity),0) as revenue,
+                COALESCE(SUM(unit_cost * quantity),0) as cost,
+                COALESCE(SUM(discount),0) as discount
+            ')
             ->first();
 
-        $revenue = (float) $stats->revenue;
-        $cogs = (float) $stats->cost;
-        $profit = $revenue - $cogs;
+        $revenue  = (float) $stats->revenue;
+        $cogs     = (float) $stats->cost;
+        $discount = (float) $stats->discount;
+        $profit   = $revenue - $cogs - $discount;
 
+        // Global stats
         $total_products = Product::count();
         $low_stock = Product::whereColumn('quantity', '<=', DB::raw('1'))->get();
         $stock_value = Product::selectRaw('COALESCE(SUM(quantity * cost_price),0) as value')->first()->value;
@@ -42,12 +48,19 @@ class DashboardController extends Controller
 
         $profitData = $products->map(function($p){
             $sold = $p->transactions()->where('type', StockTransaction::TYPE_OUT)->get();
-            return $sold->sum(fn($t) => ($t->unit_price - $t->unit_cost) * $t->quantity);
+            return $sold->sum(fn($t) => (($t->unit_price - $t->unit_cost) * $t->quantity) - $t->discount);
+        });
+
+        $discountData = $products->map(function($p){
+            return $p->transactions()
+                     ->where('type', StockTransaction::TYPE_OUT)
+                     ->sum('discount');
         });
 
         return view('dashboard', compact(
-            'start','end','revenue','cogs','profit','total_products','low_stock','stock_value',
-            'labels','stockData','profitData'
+            'start','end','revenue','cogs','profit','discount',
+            'total_products','low_stock','stock_value',
+            'labels','stockData','profitData','discountData'
         ));
     }
 }

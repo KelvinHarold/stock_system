@@ -19,6 +19,8 @@
         background-color: #f4f5f7;
         font-family: 'Segoe UI', sans-serif;
     }
+    
+    
     .login-card {
         background: #fff;
         padding: 2rem;

@@ -1,80 +1,77 @@
 @extends('layouts.app')
+
+@section('page-title', 'Create New Product')
+
 @section('content')
-@include('components.success-message')
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Create New Product</h1>
+            <p class="mb-0">Add a new product to your inventory.</p>
+        </div>
+        <a href="{{ route('products.index') }}" class="btn btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Products
+        </a>
+    </div>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3">
-        <i class="fas fa-plus-circle text-primary"></i> Create Product
-    </h1>
-    <a href="{{ route('products.index') }}" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left text-primary"></i> Back to Products
-    </a>
-</div>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post" action="{{ route('products.store') }}" enctype="multipart/form-data">
+                @csrf
+                <div class="row">
+                    <!-- Product Name -->
+                    <div class="col-md-6 mb-3">
+                        <label for="name" class="form-label">Product Name</label>
+                        <input type="text" id="name" name="name" class="form-control" value="{{ old('name') }}" required>
+                    </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <form method="post" action="{{ route('products.store') }}" enctype="multipart/form-data">
-            @csrf
+                <div class="row">
+                    <!-- Cost Price -->
+                    <div class="col-md-6 mb-3">
+                        <label for="cost_price" class="form-label">Cost Price</label>
+                        <div class="input-group">
+                            <span class="input-group-text">KES</span>
+                            <input type="number" step="0.01" id="cost_price" name="cost_price" class="form-control" value="{{ old('cost_price', 0) }}" required>
+                        </div>
+                    </div>
 
-            <!-- Name -->
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">
-                        <i class="fas fa-tag text-primary"></i> Name
-                    </label>
-                    <input name="name" class="form-control" value="{{ old('name') }}" required>
+                    <!-- Selling Price -->
+                    <div class="col-md-6 mb-3">
+                        <label for="selling_price" class="form-label">Selling Price</label>
+                        <div class="input-group">
+                            <span class="input-group-text">KES</span>
+                            <input type="number" step="0.01" id="selling_price" name="selling_price" class="form-control" value="{{ old('selling_price', 0) }}" required>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Prices -->
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">
-                        <i class="fas fa-dollar-sign text-primary"></i> Cost Price
-                    </label>
-                    <input type="number" step="0.01" name="cost_price" class="form-control" value="{{ old('cost_price',0) }}" required>
+                <!-- Initial Stock -->
+                <div class="mb-3">
+                    <label for="initial_stock" class="form-label">Initial Stock</label>
+                    <input type="number" id="initial_stock" name="initial_stock" class="form-control" value="{{ old('initial_stock', 0) }}">
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">
-                        <i class="fas fa-tags text-primary"></i> Selling Price
-                    </label>
-                    <input type="number" step="0.01" name="selling_price" class="form-control" value="{{ old('selling_price',0) }}" required>
+
+                <!-- Description -->
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea id="description" name="description" class="form-control" rows="4">{{ old('description') }}</textarea>
                 </div>
-            </div>
 
-            <!-- Initial Stock -->
-            <div class="mb-3">
-                <label class="form-label">
-                    <i class="fas fa-boxes text-primary"></i> Initial Stock (optional)
-                </label>
-                <input type="number" name="initial_stock" class="form-control" value="{{ old('initial_stock',0) }}">
-            </div>
+                <!-- Product Image -->
+                <div class="mb-3">
+                    <label for="image" class="form-label">Product Image</label>
+                    <input type="file" id="image" name="image" class="form-control" accept="image/*">
+                </div>
 
-            <!-- Description -->
-            <div class="mb-3">
-                <label class="form-label">
-                    <i class="fas fa-align-left text-primary"></i> Description
-                </label>
-                <textarea name="description" class="form-control" rows="3">{{ old('description') }}</textarea>
-            </div>
-
-            <!-- Product Image -->
-            <div class="mb-3">
-                <label class="form-label">
-                    <i class="fas fa-image text-primary"></i> Product Image (optional)
-                </label>
-                <input type="file" name="image" class="form-control" accept="image/*">
-            </div>
-
-            <!-- Submit Button -->
-            <div class="d-flex justify-content-end">
-                <button class="btn btn-success">
-                    <i class="fas fa-save text-white"></i> Create Product
-                </button>
-            </div>
-
-        </form>
+                <!-- Submit Button -->
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-success shadow-sm">
+                        <i class="fas fa-save fa-sm text-white-50"></i> Create Product
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
-
 @endsection

@@ -21,7 +21,7 @@ class ProductController extends Controller
                       ->orderByRaw("CASE WHEN name LIKE ? THEN 0 ELSE 1 END, name ASC", ["%{$search}%"]);
             })
             ->orderBy('name') // fallback ordering if no search
-            ->paginate(20)
+            ->paginate(5)
             ->withQueryString(); // preserve search in pagination links
 
         return view('products.index', compact('products', 'search'));
@@ -118,7 +118,7 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
-        $transactions = $product->transactions()->latest()->paginate(20);
+        $transactions = $product->transactions()->latest()->paginate(2);
         return view('products.show', compact('product','transactions'));
     }
 

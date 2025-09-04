@@ -53,7 +53,16 @@ Route::middleware(['auth'])->group(function () {
 
     // Reports
     Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
+
+    // Route to close today's sales and send summary email
+    Route::post('/transactions/close-sales', [ReportController::class, 'closeSales'])->name('transactions.closeSales');
+
+    //route to view closed transactions
+    Route::get('/reports/closed', [ReportController::class, 'closedTransactions'])->name('report.closed');
 });
+
+
+
 
 
 
@@ -69,11 +78,4 @@ Route::post('/register', [AuthController::class, 'register'])->name('register.st
 
 
 
-Route::middleware(['auth'])->group(function () {
-    Route::post('/transactions/reset-daily-sales', [ReportController::class, 'resetDailySales'])
-         ->name('transactions.reset_daily_sales');
-
-    Route::get('/transactions/close-sales', [ReportController::class, 'closeSales'])
-         ->name('transactions.close_sales'); // <-- GET instead of POST
-});
 

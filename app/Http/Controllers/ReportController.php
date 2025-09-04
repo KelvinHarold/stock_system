@@ -5,41 +5,61 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\StockTransaction;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SalesClosedSummary;
 
 class ReportController extends Controller
 {
     // ----------------- STOCK REPORT -----------------
-    public function stockReport()
-    {
-        $products = Product::all();
+// ----------------- STOCK REPORT -----------------
+public function stockReport()
+{
+    // Fetch all products that have at least one 'out' transaction
+    $products = Product::whereHas('transactions', function ($q) {
+        $q->where('type', StockTransaction::TYPE_OUT);
+    })->get();
 
-        // Total stock value (current stock * cost price)
-        $total_stock_value = $products->sum(function ($p) {
-            return $p->cost_price * $p->quantity;
+    // Total stock value (for displayed products)
+    $total_stock_value = $products->sum(function ($p) {
+        return $p->quantity * $p->cost_price;
+    });
+
+    // Prepare per-product sold quantity, discount, and profit
+    $products = $products->map(function ($p) {
+        $soldTransactions = $p->transactions()
+            ->where('type', StockTransaction::TYPE_OUT)
+            ->get();
+
+        $totalSoldQty = $soldTransactions->sum('quantity');
+
+        $profit = $soldTransactions->sum(function ($t) {
+            $gross = ($t->unit_price - $t->unit_cost) * $t->quantity;
+            return $gross - $t->discount;
         });
 
-        // Prepare per-product sold quantity and profit
-        $products = $products->map(function ($p) {
-            $soldTransactions = $p->transactions()->where('type','out')->get();
-            $totalSoldQty = $soldTransactions->sum('quantity');
-            $profit = $soldTransactions->sum(function ($t) {
-                return ($t->unit_price - $t->unit_cost) * $t->quantity;
-            });
+        return [
+            'name'          => $p->name,
+            'quantity'      => $p->quantity,
+            'cost_price'    => $p->cost_price,
+            'selling_price' => $p->selling_price,
+            'total_sold'    => $totalSoldQty,
+            'profit'        => $profit,
+            'discount'      => $soldTransactions->sum('discount'),
 
-            return [
-                'name' => $p->name,
-                'quantity' => $p->quantity,
-                'cost_price' => $p->cost_price,
-                'selling_price' => $p->selling_price,
-                'total_sold' => $totalSoldQty,
-                'profit' => $profit,
-            ];
-        });
+            'is_closed'     => $soldTransactions->every(fn($t) => $t->is_closed),
+            'closed_at'     => optional($soldTransactions->max('closed_at')),
+        ];
+    });
 
-        $total_profit = $products->sum('profit');
+    $total_profit   = $products->sum('profit');
+    $total_discount = $products->sum('discount');
 
-        return view('reports.stock', compact('products', 'total_stock_value', 'total_profit'));
-    }
+    return view('reports.stock', compact('products', 'total_stock_value', 'total_profit', 'total_discount'));
+}
+
+
+
 
     // ----------------- CREATE SALE -----------------
     public function createSale()
@@ -54,6 +74,7 @@ class ReportController extends Controller
             'product_id' => 'required|exists:products,id',
             'quantity'   => 'required|integer|min:1',
             'unit_price' => 'nullable|numeric|min:0',
+            'discount'   => 'nullable|numeric|min:0',
             'notes'      => 'nullable|string',
         ]);
 
@@ -64,9 +85,10 @@ class ReportController extends Controller
         }
 
         $data['unit_price'] = $data['unit_price'] ?? $product->selling_price;
-        $data['unit_cost'] = $product->cost_price;
-        $data['type'] = StockTransaction::TYPE_OUT;
-        $data['is_closed'] = false;
+        $data['unit_cost']  = $product->cost_price;
+        $data['type']       = StockTransaction::TYPE_OUT;
+        $data['discount']   = $data['discount'] ?? 0;
+        $data['is_closed']  = false;
 
         StockTransaction::create($data);
 
@@ -94,10 +116,11 @@ class ReportController extends Controller
 
         $product = Product::findOrFail($data['product_id']);
 
-        $data['unit_cost'] = $data['unit_cost'] ?? $product->cost_price;
+        $data['unit_cost']  = $data['unit_cost'] ?? $product->cost_price;
         $data['unit_price'] = $product->selling_price;
-        $data['type'] = StockTransaction::TYPE_IN;
-        $data['is_closed'] = false;
+        $data['type']       = StockTransaction::TYPE_IN;
+        $data['discount']   = 0; // no discount on purchase
+        $data['is_closed']  = false;
 
         StockTransaction::create($data);
 
@@ -105,42 +128,6 @@ class ReportController extends Controller
         $product->save();
 
         return redirect()->route('transactions.index')->with('success', 'Purchase recorded.');
-    }
-
-    // ----------------- CLOSE SALES -----------------
-    public function closeSales()
-    {
-        $products = Product::with(['transactions' => function ($q) {
-            $q->where('is_closed', false)->orderBy('created_at');
-        }])->get();
-
-        $summary = [];
-
-        foreach ($products as $product) {
-            $soldTransactions = $product->transactions->where('type', StockTransaction::TYPE_OUT);
-            $totalSoldQty = $soldTransactions->sum('quantity');
-            $profit = $soldTransactions->sum(function ($tx) {
-                return ($tx->unit_price - $tx->unit_cost) * $tx->quantity;
-            });
-
-            $summary[] = [
-                'product' => $product,
-                'total_sold' => $totalSoldQty,
-                'remaining_stock' => $product->quantity,
-                'profit' => $profit,
-            ];
-        }
-
-        return view('transactions.close_sales', compact('summary'));
-    }
-
-    // ----------------- RESET DAILY SALES -----------------
-    public function resetDailySales()
-    {
-        StockTransaction::where('is_closed', false)->update(['is_closed' => true]);
-
-        return redirect()->route('transactions.index')
-            ->with('success', 'Daily sales closed and archived successfully!');
     }
 
     // ----------------- TRANSACTIONS LIST -----------------
@@ -154,4 +141,47 @@ class ReportController extends Controller
     {
         return view('transactions.show', compact('transaction'));
     }
+
+    // ----------------- CLOSE SALES -----------------
+    public function closeSales()
+    {
+        $today = Carbon::today();
+
+        // Get today's unclosed sales
+        $transactions = StockTransaction::whereDate('created_at', $today)
+            ->where('type', StockTransaction::TYPE_OUT)
+            ->where('is_closed', false)
+            ->get();
+
+        if ($transactions->isEmpty()) {
+            return back()->with('success', 'No open sales to close for today.');
+        }
+
+        // Close each sale
+        foreach ($transactions as $t) {
+            $t->is_closed = true;
+            $t->closed_at = now();
+            $t->save();
+        }
+
+        // Send summary email to owner
+        $ownerEmail = "kelvinkifunda077@gmail.com"; // ✅ you can also load from .env
+        Mail::to($ownerEmail)->send(new SalesClosedSummary($transactions));
+
+        return back()->with('success', 'Today\'s sales have been closed and sent to the owner.');
+    }
+
+    // ----------------- CLOSED TRANSACTIONS -----------------
+public function closedTransactions()
+{
+    // Get all closed sales (type = 'out')
+    $closedTransactions = StockTransaction::with('product')
+        ->where('type', StockTransaction::TYPE_OUT)
+        ->where('is_closed', true)
+        ->orderBy('closed_at', 'desc')
+        ->get();
+
+    return view('reports.closed_transactions', compact('closedTransactions'));
+}
+
 }

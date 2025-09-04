@@ -19,12 +19,17 @@ class StockTransaction extends Model
         'unit_cost',
         'unit_price',
         'notes',
+        'discount',
+        'is_closed',
+        'closed_at',
     ];
 
     protected $casts = [
-        'unit_cost' => 'decimal:2',
-        'unit_price' => 'decimal:2',
-        'quantity' => 'integer',
+        'unit_cost'   => 'decimal:2',
+        'unit_price'  => 'decimal:2',
+        'quantity'    => 'integer',
+        'is_closed'   => 'boolean',
+        'closed_at'   => 'datetime',
     ];
 
     public function product()

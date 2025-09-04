@@ -10,7 +10,7 @@ class StockTransactionController extends Controller
 {
     public function index()
     {
-        $transactions = StockTransaction::with('product')->latest()->paginate(30);
+        $transactions = StockTransaction::with('product')->latest()->paginate(10);
         return view('transactions.index', compact('transactions'));
     }
 
@@ -23,50 +23,54 @@ class StockTransactionController extends Controller
 
     public function createSale()
     {
-        $products = Product::orderBy('name')->get();
+        $products = Product::orderBy('name')->paginate(8);
         return view('transactions.sales.create', compact('products'));
     }
 
-    public function storeSale(Request $request)
-    {
-        $data = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'quantity'   => 'required|integer|min:1',
-            'unit_price' => 'nullable|numeric|min:0',
-            'notes'      => 'nullable|string',
-        ]);
+   public function storeSale(Request $request)
+{
+    $data = $request->validate([
+        'product_id' => 'required|exists:products,id',
+        'quantity'   => 'required|integer|min:1',
+        'unit_price' => 'nullable|numeric|min:0',
+        'discount'   => 'nullable|numeric|min:0',
+        'notes'      => 'nullable|string',
+    ]);
 
-        $product = Product::findOrFail($data['product_id']);
+    $product = Product::findOrFail($data['product_id']);
 
-        // Ensure stock is available
-        if ($product->quantity < $data['quantity']) {
-            return back()->withInput()->withErrors(['quantity' => 'Not enough stock for this product.']);
-        }
-
-        // Defaults
-        if (!isset($data['unit_price']) || $data['unit_price'] === null) {
-            $data['unit_price'] = $product->selling_price;
-        }
-        $data['unit_cost'] = $product->cost_price;
-        $data['type'] = StockTransaction::TYPE_OUT;
-
-        // Save transaction
-        StockTransaction::create($data);
-
-        // Update stock
-        $product->quantity -= $data['quantity'];
-        $product->save();
-
-        return redirect()->route('transactions.index')->with('success', 'Sale recorded.');
+    // Ensure stock is available
+    if ($product->quantity < $data['quantity']) {
+        return back()->withInput()->withErrors(['quantity' => 'Not enough stock for this product.']);
     }
+
+    // Set defaults
+    $data['unit_price'] = $data['unit_price'] ?? $product->selling_price;
+    $data['unit_cost']  = $product->cost_price;
+    $data['type']       = StockTransaction::TYPE_OUT;
+    $data['discount']   = $data['discount'] ?? 0;
+
+    // Save transaction
+    StockTransaction::create($data);
+
+    // Update stock
+    $product->quantity -= $data['quantity'];
+    $product->save();
+
+    
+
+    return redirect()->route('transactions.index')->with('success', 'Sale recorded.');
+}
+
 
     // ----------------- PURCHASES -----------------
 
-    public function createPurchase()
-    {
-        $products = Product::orderBy('name')->get();
-        return view('transactions.purchases.create', compact('products'));
-    }
+  public function createPurchase()
+{
+    $products = Product::orderBy('name')->paginate(8); // paginate by 8
+    return view('transactions.purchases.create', compact('products'));
+}
+
 
     public function storePurchase(Request $request)
     {
